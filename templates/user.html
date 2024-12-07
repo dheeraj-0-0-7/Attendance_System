@@ -113,48 +113,61 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-        const buttons = document.querySelectorAll('.view-details-btn');
-        const detailsSection = document.getElementById('subject-details');
-        const loader = document.getElementById('loader');
-        const content = document.getElementById('subject-content');
-
-        buttons.forEach(button => {
-            button.addEventListener('click', function () {
-                const studentId = this.dataset.studentId;
-                const subjectId = this.dataset.subjectId;
-
-                // Update the URL without reloading the page
+            const buttons = document.querySelectorAll('.view-details-btn');
+            const detailsSection = document.getElementById('subject-details');
+            const loader = document.getElementById('loader');
+            const content = document.getElementById('subject-content');
+        
+            function loadSubjectDetails(studentId, subjectId) {
                 history.pushState(null, '', `/student/id=${studentId}/subject/${subjectId}`);
-
-                // Show loader and hide content while fetching data
                 loader.style.display = 'block';
                 detailsSection.style.display = 'none';
-
-                fetch(`/student/id=${studentId}/subject/${subjectId}`, {
-                    method: 'GET', // Changed to GET
-                    headers: {
-                        'Content-Type': 'text/html'
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.text();
-                })
-                .then(html => {
-                    content.innerHTML = html;
-                    loader.style.display = 'none';
-                    detailsSection.style.display = 'block';
-                })
-                .catch(error => {
-                    loader.style.display = 'none';
-                    content.innerHTML = `<p class="text-danger">An error occurred: ${error.message}</p>`;
-                    detailsSection.style.display = 'block';
+        
+                fetch(`/student/id=${studentId}/subject/${subjectId}`)
+                    .then(response => response.text())
+                    .then(html => {
+                        content.innerHTML = html;
+                        loader.style.display = 'none';
+                        detailsSection.style.display = 'block';
+                        setupFormSubmission();
+                    })
+                    .catch(error => {
+                        loader.style.display = 'none';
+                        content.innerHTML = `<p class="text-danger">An error occurred: ${error.message}</p>`;
+                        detailsSection.style.display = 'block';
+                    });
+            }
+        
+            function setupFormSubmission() {
+                const form = content.querySelector('form');
+                if (form) {
+                    form.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        const formData = new FormData(this);
+                        fetch(this.action, {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.text())
+                        .then(html => {
+                            content.innerHTML = html;
+                            setupFormSubmission();
+                        })
+                        .catch(error => {
+                            content.innerHTML += `<p class="text-danger">An error occurred: ${error.message}</p>`;
+                        });
+                    });
+                }
+            }
+        
+            buttons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const studentId = this.dataset.studentId;
+                    const subjectId = this.dataset.subjectId;
+                    loadSubjectDetails(studentId, subjectId);
                 });
             });
         });
-    });
-    </script>
+        </script>
 </body>
 </html>

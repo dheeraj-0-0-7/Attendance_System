@@ -115,7 +115,7 @@ def upload_image(id, subject_id):
 
         if existing_attendance:
             flash('Attendance has already been marked for today.', 'error')
-            return redirect(url_for('subject_page', id=id, subject_id=subject_id))
+            return subject(id, subject_id)
         else:
             cur = conn.cursor()
             cur.execute('''SELECT professor_id
