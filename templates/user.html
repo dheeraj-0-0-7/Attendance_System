@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+        /* Styles for subject details */
+        .details {
+            margin-bottom: 20px;
+        }
+        .details h2, .details h3, .details p {
+            margin: 5px 0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input[type="file"] {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 100%;
+        }
+        .form-group input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .form-group input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        .flash-message {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            text-align: center;
+        }
+        .flash-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .loader {
+            display: none; /* Loader hidden initially */
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome, {{ student_enrollment_info[0][0] }}</h1>
+        <h3>Student ID: {{ student_enrollment_info[0][1] }}</h3>
+
+        <h2>Subjects</h2>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Subject</th>
+                    <th>Professor</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for subject in student_enrollment_info %}
+                <tr>
+                    <td>{{ subject[2] }}</td>
+                    <td>{{ subject[4] }}</td>
+                    <td>
+                        <button class="btn btn-primary view-details-btn" 
+                                data-subject-id="{{ subject[3] }}" 
+                                data-student-id="{{ subject[1] }}">
+                            View Details
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Subject Details Section -->
+        <div class="subject-details" id="subject-details" style="display: none;">
+            <div id="subject-content"></div>
+        </div>
+
+        <!-- Loader -->
+        <div class="loader" id="loader">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+        const buttons = document.querySelectorAll('.view-details-btn');
+        const detailsSection = document.getElementById('subject-details');
+        const loader = document.getElementById('loader');
+        const content = document.getElementById('subject-content');
+
+        buttons.forEach(button => {
+            button.addEventListener('click', function () {
+                const studentId = this.dataset.studentId;
+                const subjectId = this.dataset.subjectId;
+
+                // Update the URL without reloading the page
+                history.pushState(null, '', `/student/id=${studentId}/subject/${subjectId}`);
+
+                // Show loader and hide content while fetching data
+                loader.style.display = 'block';
+                detailsSection.style.display = 'none';
+
+                fetch(`/student/id=${studentId}/subject/${subjectId}`, {
+                    method: 'GET', // Changed to GET
+                    headers: {
+                        'Content-Type': 'text/html'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    content.innerHTML = html;
+                    loader.style.display = 'none';
+                    detailsSection.style.display = 'block';
+                })
+                .catch(error => {
+                    loader.style.display = 'none';
+                    content.innerHTML = `<p class="text-danger">An error occurred: ${error.message}</p>`;
+                    detailsSection.style.display = 'block';
+                });
+            });
+        });
+    });
+    </script>
+</body>
+</html>
